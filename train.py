@@ -134,11 +134,12 @@ def init_train_state(key, config: TrainConfig, learning_rate) -> TrainState:
         model = GPT(config.model)
 
     params = model.init(key)
+    #params = variables["params"]
 
     optimizer = optax.chain(
         # Apply weight decay only to non-bias parameters
         optax.clip_by_global_norm(config.grad_clip),
-        optax.adamw(learning_rate, *config.betas, weight_decay=config.weight_decay, mask=param_decay_mask(params)),
+        optax.adamw(learning_rate, *config.betas, weight_decay=config.weight_decay),
         optax.apply_every(config.gradient_accumulation_steps),
     )
 
