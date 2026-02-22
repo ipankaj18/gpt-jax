@@ -8,6 +8,8 @@ from flax.core import FrozenDict, freeze, unfreeze
 from flax.traverse_util import flatten_dict, unflatten_dict
 
 
+distribution = nn.initializers.normal(stddev=0.02)
+
 @dataclass(frozen=True)
 class GPTConfig:
     block_size: int = 1024
@@ -35,7 +37,7 @@ class SelfAttention(nn.Module):
         head_dim = C // self.num_heads
         deterministic = nn.merge_param('deterministic', self.deterministic, deterministic)
 
-        qkv = nn.Dense(3 * C, use_bias=self.use_proj_bias, dtype=self.dtype, name='c_attn')(x)
+        qkv = nn.Dense(3 * C, use_bias=self.use_proj_bias, dtype=self.dtype, name='c_attn', kernel_init=distribution,)(x)
         qkv = qkv.reshape(B, T, 3 * self.num_heads, head_dim)
         q, k, v = jnp.array_split(qkv, 3, axis=2)
         # calculate attention matrix
@@ -48,7 +50,7 @@ class SelfAttention(nn.Module):
 
         # return weighted sum over values for each query position
         x = jnp.einsum('...hqk,...khd->...qhd', attn, v).reshape(B, T, C)
-        x = nn.Dense(C, use_bias=self.use_proj_bias, dtype=self.dtype, name='c_proj')(x)
+        x = nn.Dense(C, use_bias=self.use_proj_bias, dtype=self.dtype, name='c_proj', kernel_init=distribution,)(x)
 
         x = nn.Dropout(rate=self.dropout_rate)(x, deterministic=deterministic)
         return x
@@ -60,9 +62,9 @@ class MLP(nn.Module):
     @nn.compact
     def __call__(self, x, deterministic=None):
         B, T, C = x.shape
-        x = nn.Dense(4 * C, dtype=self.config.dtype, use_bias=self.config.use_bias, name='c_fc')(x)
+        x = nn.Dense(4 * C, dtype=self.config.dtype, use_bias=self.config.use_bias, name='c_fc', kernel_init=distribution,)(x)
         x = nn.gelu(x, approximate=True)
-        x = nn.Dense(C, dtype=self.config.dtype, use_bias=self.config.use_bias, name='c_proj')(x)
+        x = nn.Dense(C, dtype=self.config.dtype, use_bias=self.config.use_bias, name='c_proj', kernel_init=distribution,)(x)
         x = nn.Dropout(self.config.dropout_rate)(x, deterministic)
         return x
 
