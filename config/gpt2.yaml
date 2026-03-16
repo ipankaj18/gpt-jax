@@ -28,10 +28,10 @@ wandb: !dataclass:WandbConfig
     name: gpt-124m
     mode: online
 model: !dataclass:GPTConfig
-    block_size: 1024
+    block_size: 2048
     vocab_size: 50304
-    num_layers: 12
-    num_heads: 12
-    num_embeds: 768
+    num_layers: 24
+    num_heads: 16
+    num_embeds: 2048
     dropout_rate: 0.0
     dtype: bfloat16
